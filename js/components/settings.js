@@ -1,6 +1,7 @@
 import { parseDate } from "../lib/cycleCalculations.js";
 import { NUTRITION_STYLE_OPTIONS } from "../content/nutritionStyles.js";
 import { SPORT_OPTIONS } from "../content/sportOptions.js";
+import { SOCIAL_STYLE_OPTIONS, SELF_CARE_OPTIONS } from "../content/socialStyles.js";
 
 const DATE_FMT = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -53,6 +54,26 @@ export function renderSettingsView(state) {
             (opt) => `
             <button type="button" class="pill-btn ${state.preferences.preferredSports.includes(opt.id) ? "active" : ""}"
               data-action="toggle-preference-sport" data-sport="${opt.id}">${opt.label}</button>`
+          ).join("")}
+        </div>
+      </div>
+      <div class="onboarding-section" style="padding-top:14px">
+        <h3>Wie lädst du deine Energie am liebsten auf?</h3>
+        <div class="pill-group">
+          ${SOCIAL_STYLE_OPTIONS.map(
+            (opt) => `
+            <button type="button" class="pill-btn ${opt.id === state.preferences.socialStyle ? "active" : ""}"
+              data-action="set-preference-social" data-style="${opt.id}">${opt.label}</button>`
+          ).join("")}
+        </div>
+      </div>
+      <div class="onboarding-section" style="padding-top:14px">
+        <h3>Was hilft dir an anstrengenden Tagen am meisten?</h3>
+        <div class="pill-group">
+          ${SELF_CARE_OPTIONS.map(
+            (opt) => `
+            <button type="button" class="pill-btn ${opt.id === state.preferences.selfCareStyle ? "active" : ""}"
+              data-action="set-preference-selfcare" data-style="${opt.id}">${opt.label}</button>`
           ).join("")}
         </div>
       </div>

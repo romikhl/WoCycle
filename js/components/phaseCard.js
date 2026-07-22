@@ -9,8 +9,13 @@ export function renderPhaseCard(state) {
   if (!info.phase) {
     return `
       <div class="card">
-        <h2>Aktuelle Phase</h2>
-        <p class="note">Für heute liegt noch keine Phase vor deinem ersten Eintrag vor.</p>
+        <h2>Noch keine Periode erfasst</h2>
+        <p style="font-size:14px;line-height:1.5;color:var(--color-text-muted);font-weight:400;margin-top:0">
+          Trag deinen letzten Periodenbeginn ein, damit dir WoCycle deine aktuelle Phase, eine Prognose
+          und passende Empfehlungen zeigen kann. Tipp: Du kannst dazu auch direkt auf einen Tag im
+          Kalender unten tippen.
+        </p>
+        <button class="btn" data-action="open-log-modal">Periode eintragen</button>
       </div>
     `;
   }

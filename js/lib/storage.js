@@ -9,6 +9,8 @@ export const DEFAULT_SETTINGS = {
 export const DEFAULT_PREFERENCES = {
   nutritionStyle: "keine_angabe",
   preferredSports: [],
+  socialStyle: "keine_angabe",
+  selfCareStyle: "keine_angabe",
 };
 
 function defaultState() {

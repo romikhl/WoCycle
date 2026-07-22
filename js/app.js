@@ -1,11 +1,12 @@
 import { loadState, saveState } from "./lib/storage.js";
 import { parseDate, getCurrentCycleInfo, PHASES } from "./lib/cycleCalculations.js";
-import { renderOnboarding, attachOnboarding } from "./components/onboarding.js";
+import { renderOnboarding } from "./components/onboarding.js";
 import { renderPhaseCard } from "./components/phaseCard.js";
 import { renderCalendar } from "./components/calendar.js";
 import { renderRecommendations } from "./components/recommendations.js";
 import { renderSettingsView } from "./components/settings.js";
 import { renderLogModal } from "./components/logModal.js";
+import { renderDayDetailModal } from "./components/dayDetailModal.js";
 
 const root = document.getElementById("app");
 
@@ -15,8 +16,14 @@ let ui = {
   calendarMonth: { year: new Date().getFullYear(), month: new Date().getMonth() },
   logModalOpen: false,
   editingEntryId: null,
+  selectedDate: null,
   recPhase: null,
-  onboardingPrefs: { nutritionStyle: "keine_angabe", preferredSports: [] },
+  onboardingPrefs: {
+    nutritionStyle: "keine_angabe",
+    preferredSports: [],
+    socialStyle: "keine_angabe",
+    selfCareStyle: "keine_angabe",
+  },
 };
 
 function genId() {
@@ -34,12 +41,9 @@ function getEffectiveRecPhase() {
 function dispatch(action) {
   switch (action.type) {
     case "ONBOARD": {
-      const { periodStart, periodLength, cycleLength } = action.payload;
       state = {
         ...state,
         onboarded: true,
-        entries: [{ id: genId(), periodStart }],
-        settings: { ...state.settings, periodLength, defaultCycleLength: cycleLength },
         preferences: { ...ui.onboardingPrefs },
       };
       saveState(state);
@@ -60,11 +64,19 @@ function dispatch(action) {
       break;
     }
     case "OPEN_LOG_MODAL": {
-      ui = { ...ui, logModalOpen: true, editingEntryId: action.payload?.editingEntryId || null };
+      ui = { ...ui, logModalOpen: true, editingEntryId: action.payload?.editingEntryId || null, selectedDate: null };
       break;
     }
     case "CLOSE_LOG_MODAL": {
       ui = { ...ui, logModalOpen: false, editingEntryId: null };
+      break;
+    }
+    case "SELECT_DAY": {
+      ui = { ...ui, selectedDate: action.payload, logModalOpen: false };
+      break;
+    }
+    case "CLOSE_DAY_DETAIL": {
+      ui = { ...ui, selectedDate: null };
       break;
     }
     case "SAVE_ENTRY": {
@@ -79,7 +91,7 @@ function dispatch(action) {
         state = { ...state, entries: [...state.entries, { id: genId(), periodStart, periodEnd: cleanEnd }] };
       }
       saveState(state);
-      ui = { ...ui, logModalOpen: false, editingEntryId: null };
+      ui = { ...ui, logModalOpen: false, editingEntryId: null, selectedDate: null };
       break;
     }
     case "DELETE_ENTRY": {
@@ -108,6 +120,14 @@ function dispatch(action) {
       ui = { ...ui, onboardingPrefs: { ...ui.onboardingPrefs, preferredSports: next } };
       break;
     }
+    case "SET_ONBOARDING_SOCIAL": {
+      ui = { ...ui, onboardingPrefs: { ...ui.onboardingPrefs, socialStyle: action.payload } };
+      break;
+    }
+    case "SET_ONBOARDING_SELFCARE": {
+      ui = { ...ui, onboardingPrefs: { ...ui.onboardingPrefs, selfCareStyle: action.payload } };
+      break;
+    }
     case "SET_PREFERENCE_NUTRITION": {
       state = { ...state, preferences: { ...state.preferences, nutritionStyle: action.payload } };
       saveState(state);
@@ -119,6 +139,16 @@ function dispatch(action) {
         ? current.filter((s) => s !== action.payload)
         : [...current, action.payload];
       state = { ...state, preferences: { ...state.preferences, preferredSports: next } };
+      saveState(state);
+      break;
+    }
+    case "SET_PREFERENCE_SOCIAL": {
+      state = { ...state, preferences: { ...state.preferences, socialStyle: action.payload } };
+      saveState(state);
+      break;
+    }
+    case "SET_PREFERENCE_SELFCARE": {
+      state = { ...state, preferences: { ...state.preferences, selfCareStyle: action.payload } };
       saveState(state);
       break;
     }
@@ -146,8 +176,8 @@ function renderTabs() {
 
 function renderMain() {
   if (ui.activeTab === "heute") {
-    if (!ui.recPhase) ui.recPhase = getEffectiveRecPhase();
-    return renderPhaseCard(state) + renderCalendar(state, ui) + renderRecommendations(state, ui);
+    const uiWithEffectivePhase = { ...ui, recPhase: getEffectiveRecPhase() };
+    return renderPhaseCard(state) + renderCalendar(state, ui) + renderRecommendations(state, uiWithEffectivePhase);
   }
   return renderSettingsView(state);
 }
@@ -155,7 +185,6 @@ function renderMain() {
 function render() {
   if (!state.onboarded) {
     root.innerHTML = renderOnboarding(ui);
-    attachOnboarding(root, dispatch);
     return;
   }
 
@@ -163,6 +192,7 @@ function render() {
     ${renderTabs()}
     <main>${renderMain()}</main>
     ${renderLogModal(state, ui)}
+    ${renderDayDetailModal(state, ui)}
     <footer class="app-footer">Alle Daten bleiben lokal auf diesem Gerät.</footer>
   `;
 }
@@ -170,7 +200,7 @@ function render() {
 root.addEventListener("click", (e) => {
   const backdrop = e.target.closest(".modal-backdrop");
   if (backdrop && e.target === backdrop) {
-    dispatch({ type: "CLOSE_LOG_MODAL" });
+    dispatch({ type: ui.selectedDate ? "CLOSE_DAY_DETAIL" : "CLOSE_LOG_MODAL" });
     return;
   }
 
@@ -202,6 +232,15 @@ root.addEventListener("click", (e) => {
         dispatch({ type: "DELETE_ENTRY", payload: { id: actionEl.dataset.id } });
       }
       break;
+    case "select-day":
+      dispatch({ type: "SELECT_DAY", payload: actionEl.dataset.date });
+      break;
+    case "close-day-detail":
+      dispatch({ type: "CLOSE_DAY_DETAIL" });
+      break;
+    case "quick-log-period":
+      dispatch({ type: "SAVE_ENTRY", payload: { id: null, periodStart: actionEl.dataset.date, periodEnd: undefined } });
+      break;
     case "select-rec-phase":
       dispatch({ type: "SELECT_REC_PHASE", payload: actionEl.dataset.phase });
       break;
@@ -211,11 +250,26 @@ root.addEventListener("click", (e) => {
     case "toggle-onboarding-sport":
       dispatch({ type: "TOGGLE_ONBOARDING_SPORT", payload: actionEl.dataset.sport });
       break;
+    case "set-onboarding-social":
+      dispatch({ type: "SET_ONBOARDING_SOCIAL", payload: actionEl.dataset.style });
+      break;
+    case "set-onboarding-selfcare":
+      dispatch({ type: "SET_ONBOARDING_SELFCARE", payload: actionEl.dataset.style });
+      break;
+    case "finish-onboarding":
+      dispatch({ type: "ONBOARD" });
+      break;
     case "set-preference-nutrition":
       dispatch({ type: "SET_PREFERENCE_NUTRITION", payload: actionEl.dataset.style });
       break;
     case "toggle-preference-sport":
       dispatch({ type: "TOGGLE_PREFERENCE_SPORT", payload: actionEl.dataset.sport });
+      break;
+    case "set-preference-social":
+      dispatch({ type: "SET_PREFERENCE_SOCIAL", payload: actionEl.dataset.style });
+      break;
+    case "set-preference-selfcare":
+      dispatch({ type: "SET_PREFERENCE_SELFCARE", payload: actionEl.dataset.style });
       break;
   }
 });

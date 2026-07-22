@@ -31,10 +31,10 @@ export function renderCalendar(state, ui) {
       const isToday = formatDate(date) === todayStr;
       const predicted = info && info.isProjectedPeriod;
       const dotClass = info ? `phase-dot ${info.phase} ${predicted ? "predicted" : ""}` : "phase-dot";
-      return `<div class="calendar-day ${isToday ? "today" : ""}">
+      return `<button type="button" class="calendar-day ${isToday ? "today" : ""}" data-action="select-day" data-date="${formatDate(date)}">
         <span class="daynum">${date.getDate()}</span>
         <span class="${dotClass}"></span>
-      </div>`;
+      </button>`;
     })
     .join("");
 

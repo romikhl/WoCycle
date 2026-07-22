@@ -351,21 +351,28 @@ label {
   padding-bottom: 4px;
 }
 .calendar-day {
+  appearance: none;
+  -webkit-appearance: none;
   aspect-ratio: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
   border-radius: 10px;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   position: relative;
+  cursor: pointer;
+  padding: 0;
+  touch-action: manipulation;
 }
-.calendar-day.empty { background: transparent; border-color: transparent; }
+.calendar-day.empty { background: transparent; border-color: transparent; pointer-events: none; }
 .calendar-day.today { box-shadow: 0 0 0 2px var(--color-accent) inset; border-color: transparent; }
 .calendar-day .daynum { line-height: 1; }
 
@@ -461,6 +468,37 @@ label {
   padding: 12px 14px;
   line-height: 1.5;
 }
+
+.body-explanation {
+  background: var(--color-surface-alt);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 4px 0 20px;
+}
+.body-explanation h3 {
+  font-size: 14px;
+  margin: 0 0 6px;
+}
+.body-explanation p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.meal-plan {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+}
+.meal-plan li {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--color-border);
+  color: var(--color-text);
+}
+.meal-plan li:last-child { border-bottom: none; }
 
 /* Entries list */
 .entry-list {
